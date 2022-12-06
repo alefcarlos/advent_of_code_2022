@@ -1,25 +1,14 @@
-﻿using System.Security.Cryptography.X509Certificates;
-using static PuzzlesConsole.Day1.Day1Solution;
-
-namespace PuzzlesConsole.Day2;
+﻿namespace PuzzlesConsole.Day2;
 
 public static class Day2Solution
 {
-    public static int GetScore(this EShape shape) => shape switch
-    {
-        EShape.Rock => 1,
-        EShape.Paper => 2,
-        EShape.Scissors => 3,
-        _ => throw new NotImplementedException()
-    };
-
     public record RoundResult(int Opponent1Score, int Opponent2Score);
 
-    public record Round(EShape Opponent1Option, EShape Opponent2Option)
+    public record Round(EShape Opponent1Move, EShape Opponent2Move)
     {
         public ERoundWinner GetWinner()
         {
-            return (Opponent1Option, Opponent2Option) switch
+            return (Opponent1Move, Opponent2Move) switch
             {
                 //Opponent1 win
                 (EShape.Rock, EShape.Scissors) => ERoundWinner.Opponent1,
@@ -40,13 +29,16 @@ public static class Day2Solution
 
         public RoundResult GetRoundScore()
         {
+            const int winScore = 6;
+            const int drawScore = 3;
+
             var winner = GetWinner();
 
             return winner switch
             {
-                ERoundWinner.Draw => new RoundResult(3 + Opponent1Option.GetScore(), 3 + Opponent2Option.GetScore()),
-                ERoundWinner.Opponent1 => new RoundResult(6 + Opponent1Option.GetScore(), Opponent2Option.GetScore()),
-                ERoundWinner.Opponent2 => new RoundResult(Opponent1Option.GetScore(), 6 + Opponent2Option.GetScore()),
+                ERoundWinner.Draw => new RoundResult(drawScore + Opponent1Move.GetScore(), drawScore + Opponent2Move.GetScore()),
+                ERoundWinner.Opponent1 => new RoundResult(winScore + Opponent1Move.GetScore(), Opponent2Move.GetScore()),
+                ERoundWinner.Opponent2 => new RoundResult(Opponent1Move.GetScore(), winScore + Opponent2Move.GetScore()),
             };
         }
     }
@@ -57,6 +49,14 @@ public static class Day2Solution
         Paper,
         Scissors
     }
+
+    public static int GetScore(this EShape shape) => shape switch
+    {
+        EShape.Rock => 1,
+        EShape.Paper => 2,
+        EShape.Scissors => 3,
+        _ => throw new NotImplementedException()
+    };
 
     public enum ERoundWinner
     {
@@ -74,25 +74,39 @@ public static class Day2Solution
 
     public static async ValueTask RunAsync()
     {
-        Console.WriteLine("Running Day1 puzzle");
-        Console.WriteLine();
+        await RunPart1Async();
+        await RunPart2Async();
+    }
 
-        //Opponent2 = Me
+    public static async ValueTask RunPart1Async()
+    {
+        Console.WriteLine("Running Day2 puzzle");
+        Console.WriteLine();
 
         var meScore = await ParseInput()
                                 .SumAsync(x => x.GetRoundScore().Opponent2Score);
 
         Console.WriteLine($"What would your total score be if everything goes exactly according to your strategy guide? {meScore}");
-
     }
 
-    internal static async IAsyncEnumerable<Round> ParseInput()
+    public static async ValueTask RunPart2Async()
+    {
+        Console.WriteLine("Running Day2 puzzle");
+        Console.WriteLine();
+
+        var meScore = await ParseInput2()
+                                .SumAsync(x => x.GetRoundScore().Opponent2Score);
+
+        Console.WriteLine($"Following the Elf's instructions for the second column, what would your total score be if everything goes exactly according to your strategy guide? {meScore}");
+    }
+
+    internal static async IAsyncEnumerable<Round> ParseInput2()
     {
         await foreach (var line in File.ReadLinesAsync(@"Day2\input.txt"))
         {
             var options = line.Split(" ");
 
-            var opponent1Option = options[0] switch
+            var opponent1Move = options[0] switch
             {
                 "A" => EShape.Rock,
                 "B" => EShape.Paper,
@@ -106,9 +120,9 @@ public static class Day2Solution
                 "Z" => EOpponent2Instruction.MustWin,
             };
 
-            var opponent2Option = (opponent2Instruction, opponent1Option) switch
+            var opponent2Move = (opponent2Instruction, opponent1Move) switch
             {
-                (EOpponent2Instruction.MustDraw, _) => opponent1Option,
+                (EOpponent2Instruction.MustDraw, _) => opponent1Move,
 
                 (EOpponent2Instruction.MustLose, EShape.Rock) =>EShape.Scissors,
                 (EOpponent2Instruction.MustLose, EShape.Paper) =>EShape.Rock,
@@ -121,7 +135,32 @@ public static class Day2Solution
 
 
 
-            yield return new Round(opponent1Option, opponent2Option);
+            yield return new Round(opponent1Move, opponent2Move);
+        }
+    }
+
+    internal static async IAsyncEnumerable<Round> ParseInput()
+    {
+        await foreach (var line in File.ReadLinesAsync(@"Day2\input.txt"))
+        {
+            var options = line.Split(" ");
+
+            var opponent1Move = options[0] switch
+            {
+                "A" => EShape.Rock,
+                "B" => EShape.Paper,
+                "C" => EShape.Scissors
+            };
+
+            var opponent2Move = options[1] switch
+            {
+                "X" => EShape.Rock,
+                "Y" => EShape.Paper,
+                "Z" => EShape.Scissors,
+            };
+
+
+            yield return new Round(opponent1Move, opponent2Move);
         }
     }
 }
