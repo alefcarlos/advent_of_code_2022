@@ -1,11 +1,17 @@
-﻿using Puzzles.Console.Day1;
+﻿using PuzzlesConsole.Day1;
 
-Console.WriteLine("Select the puzze:");
+Console.WriteLine("Select the puzzle by day. Press 'q' to exit");
 
-var result = await Day1Solution.RunPart1Async();
-Console.WriteLine(result);
+var solutionTask = Console.ReadLine() switch
+{
+   "q" or "" => Exit(),
+   "1" => Day1Solution.RunAsync(),
+};
 
-result = await Day1Solution.RunPart2Async();
-Console.WriteLine(result);
+await solutionTask;
 
-
+static ValueTask Exit()
+{
+    Console.WriteLine("Bye ;)");
+    return ValueTask.CompletedTask;
+}
